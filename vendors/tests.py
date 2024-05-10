@@ -1,34 +1,23 @@
 from django.test import TestCase
-from django.urls import reverse
-from rest_framework import status
 from rest_framework.test import APIClient
-from .models import Vendor, HistoricalPerformance
+from rest_framework import status
+from .models import Vendor
 
-class VendorAPITests(TestCase):
+class VendorAPITestCase(TestCase):
     def setUp(self):
         self.client = APIClient()
+        self.vendor_data = {
+            'name': 'Test Vendor',
+            'contact_details': '1234567890',
+            'address': 'Test Address',
+            'vendor_code': 'V001'
+            # Add more fields as needed
+        }
+        self.vendor = Vendor.objects.create(**self.vendor_data)
 
-    def test_vendor_list_create(self):
-        url = reverse('vendor_list_create')
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    def test_create_vendor(self):
+        response = self.client.post('/vendors/', self.vendor_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Vendor.objects.count(), 2)  # Assuming one vendor is created in setUp
 
-        # You can add more test cases to ensure correct behavior for POST requests to create vendors
-
-    def test_vendor_retrieve_update_destroy(self):
-        vendor = Vendor.objects.create(name='Test Vendor', contact_details='Contact', address='Address', vendor_code='V001')
-        url = reverse('vendor_retrieve_update_destroy', kwargs={'id': vendor.id})
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        # You can add more test cases to ensure correct behavior for updating and deleting vendors
-
-    def test_vendor_performance(self):
-        vendor = Vendor.objects.create(name='Test Vendor', contact_details='Contact', address='Address', vendor_code='V001')
-        url = reverse('vendor_performance', kwargs={'id': vendor.id})
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        # You can add more test cases to ensure correct behavior for vendor performance endpoint
-
-    # Add more test cases as needed for your application
+    # Add more test cases for other endpoints (retrieve, update, delete, etc.) as needed

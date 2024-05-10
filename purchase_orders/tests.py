@@ -1,40 +1,37 @@
-from django.test import TestCase, Client
-from django.urls import reverse
+from django.test import TestCase
+from rest_framework.test import APIClient
 from rest_framework import status
-import json
-from vendors.models import *
 from .models import PurchaseOrder
+from vendors.models import *
 
-class PurchaseOrderAPITests(TestCase):
+class PurchaseOrderAPITestCase(TestCase):
     def setUp(self):
-        self.client = Client()
-        self.vendor_url = reverse('vendor-list')
-
-    def test_create_vendor(self):
-        # Test creating a new vendor
-        data = {
+        self.client = APIClient()
+        self.vendor_data = {
             'name': 'Test Vendor',
-            'contact_details': 'test@example.com',
-            'address': '123 Test St',
-            'vendor_code': 'TEST001'
+            'contact_details': '1234567890',
+            'address': 'Test Address',
+            'vendor_code': 'V001'
+            # Add more fields as needed
         }
-        response = self.client.post(self.vendor_url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.vendor = Vendor.objects.create(**self.vendor_data)
 
-    def test_list_vendors(self):
-        # Test retrieving a list of vendors
-        response = self.client.get(self.vendor_url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.purchase_order_data = {
+            'po_number': 'PO001',
+            'vendor': self.vendor.id,
+            'order_date': '2024-05-10T12:00:00Z',
+            'expected_delivery_date': '2024-05-15T12:00:00Z',
+            'delivery_date': '2024-05-15T12:00:00Z',
+            'items': {'item1': 'description1', 'item2': 'description2'},
+            'quantity': 10,
+            'status': 'completed'
+            # Add more fields as needed
+        }
+        self.purchase_order = PurchaseOrder.objects.create(**self.purchase_order_data)
 
-    # Add more test methods for other endpoints...
-
-class PurchaseOrderModelTests(TestCase):
     def test_create_purchase_order(self):
-        # Test creating a new purchase order
-        vendor = Vendor.objects.create(name='Test Vendor', contact_details='test@example.com', address='123 Test St', vendor_code='TEST001')
-        purchase_order = PurchaseOrder.objects.create(vendor=vendor, po_number='PO001', quantity=10, status='pending')
-        self.assertEqual(purchase_order.po_number, 'PO001')
-        self.assertEqual(purchase_order.quantity, 10)
-        self.assertEqual(purchase_order.status, 'pending')
+        response = self.client.post('/purchase_orders/', self.purchase_order_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(PurchaseOrder.objects.count(), 2)  # Assuming one purchase order is created in setUp
 
-    # Add more test methods for other models and functionalities...
+    # Add more test cases for other endpoints (retrieve, update, delete, etc.) as needed
